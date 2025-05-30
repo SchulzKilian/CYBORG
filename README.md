@@ -43,7 +43,7 @@ Shown in this figure are the average CAMs across the entire test set for 10 inde
 To create and activate the CYBORG environment, run the following code:
 </p>
 
-    conda env create --file env.yaml
+    conda env create --file env.yml
     conda activate CYBORG
     
 <p>
