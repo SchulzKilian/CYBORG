@@ -163,7 +163,10 @@ class evaluation:
         # Plot non-normalized confusion matrix
         np.set_printoptions(precision=2)
         class_names = ['0', '1']
-        self.plot_confusion_matrix(conf_matrix, method,path, classes=class_names,normalize=False)
+        try:
+            self.plot_confusion_matrix(conf_matrix,path, classes=class_names,normalize=False, title='Confusion matrix, without normalization',  method=method)
+        except:
+            pass
 
         # Saving evaluation measures
         pickle.dump((fprs,tprs,minThreshold,tpr,fpr,conf_matrix), open(os.path.join(path,method +".pickle"), "wb"))

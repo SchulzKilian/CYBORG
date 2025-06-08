@@ -25,6 +25,7 @@ parser.add_argument('-datasetPath', required=False, default= '../Data/train/orig
 parser.add_argument('-outputPath', required=False, default= '../model_output_local/cvpr_test_largemodels/',type=str)
 parser.add_argument('-network', default= 'densenet',type=str)
 parser.add_argument('-nClasses', default= 2,type=int)
+parser.add_argument('-create_csv', default=False, action='store_true', help='Create CSV file for dataset where labels are assigned based on filename')
 
 args = parser.parse_args()
 device = torch.device('cuda')
@@ -56,7 +57,7 @@ else:
     model.classifier = nn.Linear(num_ftrs, args.nClasses)
     model = model.to(device)
 
-print(model)
+# print(model)
 
 # Creation of Log folder: used to save the trained model
 log_path = os.path.join(args.outputPath, 'Logs')
@@ -77,8 +78,38 @@ if os.path.exists(result_path + "/DesNet121_Histogram.jpg") and os.path.exists(l
 
 class_assgn = {'Real':0,'Synthetic':1}
 
+if args.create_csv:
+    import pandas as pd
+    import os
+    from sklearn.model_selection import train_test_split
+
+
+    files = [f for f in os.listdir(args.datasetPath) if f.endswith(('.jpg', '.png'))]
+    train_files, test_files = train_test_split(files, test_size=0.2, random_state=42)
+
+
+    rows = []
+    for f in train_files:
+        label = 'Dog' if f[0].isupper() else 'Cat'
+        rows.append(['train', label, f])
+    for f in test_files:
+        label = 'Dog' if f[0].isupper() else 'Cat'
+        rows.append(['test', label, f])
+
+
+    csv_filename = 'args.csv'
+    csv_path = os.path.join(os.getcwd(), csv_filename)
+    pd.DataFrame(rows, columns=['split', 'class', 'filename']).to_csv(csv_path, index=False)
+    class_assgn = {'Dog':0,'Cat':1}
+    args.csvPath = csv_path
+    print("CSV file created at:", args.csvPath)
+    print("Dataset path:", args.datasetPath)
+
 # Dataloader for train and test data
+assert os.listdir(args.datasetPath), "Empty training data folder"
+# print(os.listdir(args.datasetPath))
 dataseta = datasetLoader(args.csvPath,args.datasetPath,train_test='train',c2i=class_assgn,im_size=im_size,network=args.network)
+assert len(dataseta) > 0, "No training data found. Please check the dataset path and CSV file."
 dl = torch.utils.data.DataLoader(dataseta, batch_size=args.batchSize, shuffle=True, num_workers=0, pin_memory=True)
 dataset = datasetLoader(args.csvPath,args.datasetPath, train_test='test', c2i=dataseta.class_to_id,im_size=im_size,network=args.network)
 test = torch.utils.data.DataLoader(dataset, batch_size=args.batchSize, shuffle=True, num_workers=0, pin_memory=True)
@@ -207,6 +238,6 @@ plt.savefig(os.path.join(result_path,'model_Loss.jpg'))
 
 # Evaluation of test set utilizing the trained model
 obvResult = evaluation()
-errorIndex, predictScore, threshold = obvResult.get_result(testImgNames, testTrueLabels, testPredScores, result_path)
+errorIndex, predictScore, threshold = obvResult.get_result("Normal", testImgNames, testTrueLabels, testPredScores, result_path)
 
 

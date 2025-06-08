@@ -286,6 +286,7 @@ plt.savefig(os.path.join(result_path,'model_Loss.jpg'))
 
 # Evaluation of test set utilizing the trained model
 obvResult = evaluation()
+
 errorIndex, predictScore, threshold = obvResult.get_result(testImgNames, testTrueLabels, testPredScores, result_path)
 
 
