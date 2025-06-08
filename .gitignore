@@ -27,6 +27,13 @@ share/python-wheels/
 *.egg
 MANIFEST
 
+# Actual model files
+training_code/Logs/current_model.pth
+training_code/Logs/final_model.pth
+
+training_code/Logs_Normal/current_model.pth
+training_code/Logs_Normal/final_model.pth
+
 # PyInstaller
 #  Usually these files are written by a python script from a template
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.

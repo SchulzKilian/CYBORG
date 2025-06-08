@@ -58,12 +58,12 @@ class datasetLoader(data_utl.Dataset):
                         human_map = Image.open(self.map_location + image_name.split("/")[-1])
                         transform_human_map = self.map_transform(human_map)
                         transform_human_map = transform_human_map.type(torch.float)
-                        transform_human_map = torch.squeeze(transform_human_map)
+                        transform_human_map = transform_human_map.squeeze(0)
                         transform_human_map = transform_human_map - torch.min(transform_human_map)
                         transform_human_map = transform_human_map / torch.max(transform_human_map)
                         human_map.close()
                     else:
-                        transform_human_map = 0
+                        transform_human_map = torch.zeros(self.map_size, self.map_size, dtype=torch.float)
                     c = v[1]
                     if c not in self.class_to_id:
                         self.class_to_id[c] = cid

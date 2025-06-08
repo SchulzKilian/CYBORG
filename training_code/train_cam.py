@@ -27,6 +27,7 @@ parser.add_argument('-heatmaps', required=False, default= '../Data/train/heatmap
 parser.add_argument('-alpha', required=False, default=0.5,type=float)
 parser.add_argument('-network', default= 'densenet',type=str)
 parser.add_argument('-nClasses', default= 2,type=int)
+parser.add_argument('-create_csv', action='store_true', help='Create CSV file for dataset')
 
 args = parser.parse_args()
 device = torch.device('cuda')
@@ -75,9 +76,6 @@ else:
 
 print(model)
 
-# Create destination folder
-os.makedirs(args.outputPath,exist_ok=True)
-
 # Creation of Log folder: used to save the trained model
 log_path = os.path.join(args.outputPath, 'Logs')
 if not os.path.exists(log_path):
@@ -90,12 +88,41 @@ if not os.path.exists(result_path):
     os.mkdir(result_path)
 
 
+
+
 if os.path.exists(result_path + "/DesNet121_Histogram.jpg") and os.path.exists(log_path + "/DesNet121_best.pth"):
     print("Training already completed for this setup, exiting...")
     sys.exit()
 
 
 class_assgn = {'Real':0,'Synthetic':1}
+
+
+if args.create_csv:
+    import pandas as pd
+    from sklearn.model_selection import train_test_split
+
+
+    files = [f for f in os.listdir(args.datasetPath) if f.endswith(('.jpg', '.png'))]
+    train_files, test_files = train_test_split(files, test_size=0.2, random_state=42)
+
+
+    rows = []
+    for f in train_files:
+        label = 'Dog' if f[0].isupper() else 'Cat'
+        rows.append(['train', label, f])
+    for f in test_files:
+        label = 'Dog' if f[0].isupper() else 'Cat'
+        rows.append(['test', label, f])
+
+
+    csv_filename = 'args.csv'
+    csv_path = os.path.join(os.getcwd(), csv_filename)
+    pd.DataFrame(rows, columns=['split', 'class', 'filename']).to_csv(csv_path, index=False)
+    class_assgn = {'Dog':0,'Cat':1}
+    args.csvPath = csv_path
+    print("CSV file created at:", args.csvPath)
+    print("Dataset path:", args.datasetPath)
 
 # Dataloader for train and test data
 dataseta = datasetLoader(args.csvPath,args.datasetPath,train_test='train',c2i=class_assgn,map_location=args.heatmaps,map_size=map_size,im_size=im_size,network=args.network)
@@ -287,6 +314,6 @@ plt.savefig(os.path.join(result_path,'model_Loss.jpg'))
 # Evaluation of test set utilizing the trained model
 obvResult = evaluation()
 
-errorIndex, predictScore, threshold = obvResult.get_result(testImgNames, testTrueLabels, testPredScores, result_path)
+errorIndex, predictScore, threshold = obvResult.get_result("CYBORG", testImgNames, testTrueLabels, testPredScores, result_path)
 
 

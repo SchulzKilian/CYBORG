@@ -80,7 +80,6 @@ class_assgn = {'Real':0,'Synthetic':1}
 
 if args.create_csv:
     import pandas as pd
-    import os
     from sklearn.model_selection import train_test_split
 
 
