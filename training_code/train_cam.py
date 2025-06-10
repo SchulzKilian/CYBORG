@@ -198,6 +198,8 @@ for epoch in range(args.nEpochs):
                 if torch.isnan(hmap).any():
                     print("NaN in hmap! Skipping batch.")
                     exit()
+
+
                 outputs = model(data)
 
                 # Prediction of accuracy
@@ -205,7 +207,13 @@ for epoch in range(args.nEpochs):
                 corr = torch.sum((pred == cls).int())
                 acc += corr.item()
                 tot += data.size(0)
-                class_loss = criterion(outputs, cls)                       
+                class_loss = criterion(outputs, cls)  
+                use_hmap = True
+
+
+                # If statement to check if hmap is only zeros
+                if torch.all(hmap == 0):
+                    use_hmap = False                     
 
                 # Running model over data
                 if phase == 'train' and alpha != 1:
@@ -242,7 +250,7 @@ for epoch in range(args.nEpochs):
                     hmap_loss = 0
             
                 # Optimization of weights for training data
-                if phase == 'train':
+                if phase == 'train' and use_hmap:
                     if alpha != 1.0:
                         loss = (alpha)*(class_loss) + (1-alpha)*(hmap_loss)
                     else:
@@ -255,7 +263,7 @@ for epoch in range(args.nEpochs):
                     loss.backward()
                     solver.step()
                     log['iterations'].append(class_loss.item())
-                elif phase == 'test':
+                elif phase == 'test' or not use_hmap:
                     loss = class_loss
                     val_step += 1
                     temp = outputs.detach().cpu().numpy()

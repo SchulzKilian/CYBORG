@@ -65,11 +65,7 @@ class datasetLoader(data_utl.Dataset):
                         transform_human_map = transform_human_map / (torch.max(transform_human_map) + 1e-8)
                         human_map.close()
                     else:
-                        if not train_test == 'test':
-                            print("No human map found for:", map_path)
-                            exit()
 
-                        # If no human map is found, create a dummy tensor
                         transform_human_map = torch.zeros(self.map_size, self.map_size, dtype=torch.float)
                     c = v[1]
                     if c not in self.class_to_id:
