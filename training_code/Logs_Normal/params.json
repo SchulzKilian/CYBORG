@@ -1,1 +1,0 @@
-{"batchSize": 20, "nEpochs": 50, "csvPath": "/home/kilianschulz/Programming/CYBORG/training_code/args.csv", "datasetPath": "/home/kilianschulz/Programming/Machine-Teaching/pets/oxford-iiit-pet/images/", "outputPath": "", "network": "densenet", "nClasses": 2, "create_csv": true}

@@ -181,6 +181,7 @@ for epoch in range(args.nEpochs):
                 model.model.eval()
             
         tloss = 0.
+        logger_loss = 0.
         acc = 0.
         tot = 0
         c = 0
@@ -194,7 +195,9 @@ for epoch in range(args.nEpochs):
                 data = data.to(device)
                 cls = cls.to(device)
                 hmap = hmap.to(device)
-                
+                if torch.isnan(hmap).any():
+                    print("NaN in hmap! Skipping batch.")
+                    exit()
                 outputs = model(data)
 
                 # Prediction of accuracy
@@ -244,11 +247,14 @@ for epoch in range(args.nEpochs):
                         loss = (alpha)*(class_loss) + (1-alpha)*(hmap_loss)
                     else:
                         loss = class_loss
+                    # print(f'classification loss: {class_loss.item()}, heatmap loss: {hmap_loss.item()}')
+                    # print(f'loss: {loss.item()}')
+                    # print(f'hmap loss: {hmap_loss.item()}')
                     train_step += 1
                     solver.zero_grad()
                     loss.backward()
                     solver.step()
-                    log['iterations'].append(loss.item())
+                    log['iterations'].append(class_loss.item())
                 elif phase == 'test':
                     loss = class_loss
                     val_step += 1
@@ -259,13 +265,14 @@ for epoch in range(args.nEpochs):
                     imgNames.extend(imageName)
 
                 tloss += loss.item()
+                logger_loss += class_loss.item()
                 c += 1
 
         # Logging of train and test results
         if phase == 'train':
-            log['epoch'].append(tloss/c)
+            log['epoch'].append(logger_loss/c)
             log['train_acc'].append(acc/tot)
-            print('Epoch: ', epoch, 'Train loss: ',tloss/c, 'Accuracy: ', acc/tot)
+            print('Epoch: ', epoch, 'Train loss: ',logger_loss/c, 'Accuracy: ', acc/tot)
             train_loss.append(tloss / c)
 
         elif phase == 'test':

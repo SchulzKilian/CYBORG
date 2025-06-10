@@ -54,15 +54,22 @@ class datasetLoader(data_utl.Dataset):
                     img = Image.open(imagePath).convert('RGB')
                     tranform_img = self.transform(img)
                     img.close()
-                    if train_test == 'train' and os.path.exists(self.map_location + image_name.split("/")[-1]):
-                        human_map = Image.open(self.map_location + image_name.split("/")[-1])
+                    map_path = (self.map_location + image_name.split("/")[-1]).rstrip('.jpg') + '.png'
+                    if train_test == 'train' and os.path.exists(map_path):
+
+                        human_map = Image.open(map_path)
                         transform_human_map = self.map_transform(human_map)
                         transform_human_map = transform_human_map.type(torch.float)
                         transform_human_map = transform_human_map.squeeze(0)
                         transform_human_map = transform_human_map - torch.min(transform_human_map)
-                        transform_human_map = transform_human_map / torch.max(transform_human_map)
+                        transform_human_map = transform_human_map / (torch.max(transform_human_map) + 1e-8)
                         human_map.close()
                     else:
+                        if not train_test == 'test':
+                            print("No human map found for:", map_path)
+                            exit()
+
+                        # If no human map is found, create a dummy tensor
                         transform_human_map = torch.zeros(self.map_size, self.map_size, dtype=torch.float)
                     c = v[1]
                     if c not in self.class_to_id:
