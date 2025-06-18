@@ -20,14 +20,20 @@ from xception.network.models import model_selection
 parser = argparse.ArgumentParser()
 parser.add_argument('-batchSize', type=int, default=20)
 parser.add_argument('-nEpochs', type=int, default=50)
-parser.add_argument('-csvPath', required=False, default= '../csvs/original.csv',type=str)
-parser.add_argument('-datasetPath', required=False, default= '../Data/train/original_data/',type=str)
-parser.add_argument('-outputPath', required=False, default= '../model_output_local/cvpr_test/',type=str)
-parser.add_argument('-heatmaps', required=False, default= '../Data/train/heatmaps/',type=str)
+parser.add_argument('-csvPath', required=False, default= '',type=str)
+parser.add_argument('-datasetPath', required=False, default= '/home/kilianschulz/Programming/Machine-Teaching/pets/oxford-iiit-pet/images/',type=str)
+parser.add_argument('-heatmaps', required=False, default= '/home/kilianschulz/Programming/Machine-Teaching/pets/oxford-iiit-pet/annotations/saliency/',type=str)
 parser.add_argument('-alpha', required=False, default=0.5,type=float)
 parser.add_argument('-network', default= 'densenet',type=str)
 parser.add_argument('-nClasses', default= 2,type=int)
 parser.add_argument('-create_csv', action='store_true', help='Create CSV file for dataset')
+parser.add_argument('-image_percent', default=1.0, type=float, help='Percentage of images to select for testing')
+parser.add_argument('-image_choosing', default='random', help='How to choose images for testing, options: random, coreset')
+parser.add_argument('-outputPath', required=False, default= '',type=str)
+parser.add_argument('-cyborg_weighting', default=1.0, help='How to weight the Cyborg loss, default is 1.0 (no weighting)')
+
+
+
 
 args = parser.parse_args()
 device = torch.device('cuda')
@@ -77,13 +83,15 @@ else:
 print(model)
 
 # Creation of Log folder: used to save the trained model
-log_path = os.path.join(args.outputPath, 'Logs')
+folder_name = 'Logs_' + args.image_choosing + '_' + str(args.image_percent) + '_' + str(args.cyborg_weighting) + '_' + args.network
+log_path = os.path.join(args.outputPath, folder_name)
 if not os.path.exists(log_path):
     os.mkdir(log_path)
 
 
-# Creation of result folder: used to save the performance of trained model on the test set
-result_path = os.path.join(args.outputPath , 'Results')
+# Creation of Log folder: used to save the trained model
+folder_name = 'Results' + args.image_choosing + '_' + str(args.image_percent) + '_' + str(args.cyborg_weighting) + '_' + args.network
+result_path = os.path.join(args.outputPath, folder_name)
 if not os.path.exists(result_path):
     os.mkdir(result_path)
 
@@ -208,12 +216,16 @@ for epoch in range(args.nEpochs):
                 acc += corr.item()
                 tot += data.size(0)
                 class_loss = criterion(outputs, cls)  
-                use_hmap = True
+                use_hmap = False
 
+
+                 
+                if batch_idx  == 0:
+                    use_hmap = True      
 
                 # If statement to check if hmap is only zeros
                 if torch.all(hmap == 0):
-                    use_hmap = False                     
+                    use_hmap = False                
 
                 # Running model over data
                 if phase == 'train' and alpha != 1:
